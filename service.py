@@ -11,7 +11,6 @@ import queue
 
 from threading import Thread
 from queue import Queue
-from collections import deque
 
 import xbmc
 
@@ -40,7 +39,7 @@ CODES = {
   202: b"\336\r\0\0r\6\0\0\364\1\0\0^\1\0\0\364\1\0\0^\1\0\0\364\1\0\0\342\4\0\0\364\1\0\0^\1\0\0&\2\0\0\260\4\0\0\364\1\0\0^\1\0\0\364\1\0\0\342\4\0\0\364\1\0\0^\1\0\0\364\1\0\0^\1\0\0\364\1\0\0\342\4\0\0\364\1\0\0^\1\0\0\364\1\0\0\220\1\0\0\302\1\0\0\342\4\0\0\364\1\0\0\342\4\0\0\364\1\0\0^\1\0\0\364\1\0\0\220\1\0\0\302\1\0\0\220\1\0\0\302\1\0\0\220\1\0\0\364\1\0\0\220\1\0\0\302\1\0\0\220\1\0\0\302\1\0\0\302\1\0\0\302\1\0\0\220\1\0\0\302\1\0\0\342\4\0\0\364\1\0\0\220\1\0\0\302\1\0\0\342\4\0\0\364\1\0\0\220\1\0\0\302\1\0\0\220\1\0\0\302\1\0\0\220\1\0\0\302\1\0\0\24\5\0\0\302\1\0\0\220\1\0\0\302\1\0\0\24\5\0\0\302\1\0\0\220\1\0\0\302\1\0\0\24\5\0\0\302\1\0\0\220\1\0\0\302\1\0\0\24\5\0\0\302\1\0\0\24\5\0\0\220\1\0\0\302\1\0\0\302\1\0\0\24\5\0\0\220\1\0\0\302\1\0\0\302\1\0\0\220\1\0\0\302\1\0\0\220\1\0\0\302\1\0\0\302\1\0\0\302\1\0\0\342\4\0\0\302\1\0\0\24\5\0\0\302\1\0\0\24\5\0\0\220\1\0\0\24\5\0\0\302\1\0\0\302\1\0\0\220\1\0\0\302\1\0\0\302\1\0\0",
 }
 
-
+# Minimal re-implementation of method from https://github.com/cz172638/v4l-utils/blob/master/utils/ir-ctl/ir-ctl.c
 def open_lirc (filename:str = "/dev/lirc0"):
   global FEATURES
 
@@ -56,6 +55,7 @@ def open_lirc (filename:str = "/dev/lirc0"):
 
   return fd
 
+# Minimal re-implementation of method from https://github.com/cz172638/v4l-utils/blob/master/utils/ir-ctl/ir-ctl.c
 def lirc_send (fd, device, carrier, cmd):
   if not int.from_bytes(FEATURES, "little") & LIRC_CAN_SEND_PULSE:
     sys.stderr.write(f"{device}: device cannot send raw ir\n")
@@ -71,6 +71,7 @@ def lirc_send (fd, device, carrier, cmd):
 
   os.write(fd, CODES[cmd])
 
+# Thread to process IR blasting events
 def consumer (fd):
   global KEEP_RUNNING
 
@@ -82,38 +83,52 @@ def consumer (fd):
       pass
 
 if __name__ == '__main__':
+  # Listen for events from Kodi
   monitor = xbmc.Monitor()
+
+  # Unix socket location for listening to eventlircd
   listener = "/run/lirc/lircd"
+
+  # Initialize some variables (they need to be something so they can be used in the "finally" block)
   consumer_thread = fd = sock = None
 
   try:
+    # Open a file descriptor to the blaster device
     fd = open_lirc()
+
+    # Start a thread to consume and process blaster events
     consumer_thread = Thread(target=consumer, args=(fd,))
     consumer_thread.start()
 
-    # Create a UDS socket
+    # Connect to the eventlircd UDS socket
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.settimeout(1)
     sock.connect(listener)
 
+    # Main runtime loop, continuing until Kodi tells us to stop
     while not monitor.abortRequested():
       try:
+        # Read up to 64 bytes from the UDS
         data = sock.recv(64)
 
+        # Decode the data as a UTF-8 string, tokenize on a space delimiter, and grab the first element
         try:
           cmd = int(data.decode("utf-8").split(" ")[0])
         except ValueError:
           continue
 
+        # Queue the blaster to handle the button, if it's one we have defined, otherwise, print the key code to the Kodi log
         if cmd in CODES.keys():
           EVENTS.put(cmd)
         else:
           xbmc.log(f"Ignoring key code {cmd}", level=xbmc.LOGINFO)
 
+      # Loop again if the socket connection times out
       except socket.timeout:
         pass
 
   finally:
+    # Stop the consumer thread and close all file/socket handles
     if consumer_thread:
       KEEP_RUNNING = False
       consumer_thread.join(2)
