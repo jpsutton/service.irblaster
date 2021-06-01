@@ -9,7 +9,7 @@ I have a media center setup that looks roughly like the following:
                                     │ TV │
                                     └────┘
                                       ▲
-                                      │                                      ▲
+                                      │
                                      HDMI
                                       │
          ┌──────┐               ┌─────┴─────┐           ┌────────────┐
