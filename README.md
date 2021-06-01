@@ -57,7 +57,7 @@ the minimal amount of functionality that I needed in my own application. I also
 decided that running as a Kodi service would be ideal for integration with Kodi itself.
 
 On OpenElec/LibreElec/CoreElec systems, inputs are all received by a process called
-[eventlircd] (https://github.com/OpenELEC/eventlircd). The key presses are communicated
+[eventlircd](https://github.com/OpenELEC/eventlircd). The key presses are communicated
 to Kodi via a Unix domain socket. This provided a way for me to intercept the key-press
 data in real-time (or as real-time as Kodi receives them, anyway), as I could simply 
 connect to the same Unix domain socket, and listen for incoming key press events, and
