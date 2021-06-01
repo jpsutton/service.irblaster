@@ -1,4 +1,4 @@
-# script.irblaster.service
+# service.irblaster
 Kodi service addon to support low-latency raw IR blasting to arbitrary devices
 
 ## Background
@@ -7,14 +7,15 @@ I have a media center setup that looks roughly like the following:
 
                                     ┌────┐
                                     │ TV │
-                                    └─▲──┘
-                                      │
+                                    └────┘
+                                      ▲
+                                      │                                      ▲
                                      HDMI
                                       │
          ┌──────┐               ┌─────┴─────┐           ┌────────────┐
-         │ Kodi ├────HDMI───────┤ Denon AVR ├───HDMI────┤ Android TV │
-         └──┬───┘               └─────▲─────┘           └────────────┘
-            │                         │
+         │ Kodi ├────HDMI──────►┤ Denon AVR ├◄──HDMI────┤ Android TV │
+         └──┬───┘               └───────────┘           └────────────┘
+            │                         ▲
            USB                        │
             │                         │
       ┌─────┴──────┐                  │
@@ -66,24 +67,25 @@ then execute my own IR blasting routines without having to fork to a new process
 So then, the solution looks like the following:
 
 
-      ┌──────────┐       ┌────────────┐       ┌────────────┐
-      │ IR Input ├──────►│ eventlircd ├──────►│Unix Socket │
-      └──────────┘       └────────────┘       └┬─────────┬─┘
+      ┌──────────┐       ┌────────────┐       ┌─────────────┐
+      │ IR Input ├──────►│ eventlircd ├──────►│ Unix Socket │
+      └──────────┘       └────────────┘       └┬─────────┬──┘
                                                │         │
                                                │         │
-                                               │         │
-                   ┌──────────────────┐        │   ┌─────▼─┐
-                   │ script.irblaster │◄───────┘   │ Kodi  │
-                   └────────┬─────────┘            └───────┘
+                                               │         ▼
+                   ┌───────────────────┐       │   ┌───────┐
+                   │ service.irblaster │◄──────┘   │ Kodi  │
+                   └────────┬──────────┘           └───────┘
                             │
                           Blast
                             │
-                      ┌─────▼─────┐
+                            ▼
+                      ┌───────────┐
                       │ Denon AVR │
                       └───────────┘
 
 It should be noted that you'll want to add "noop" handlers into your kodi keymap in order
-to prevent Kodi from acting on the inputs that you want mapped to script.irblaster.
+to prevent Kodi from acting on the inputs that you want mapped to service.irblaster.
 
 ## Project Status
 
