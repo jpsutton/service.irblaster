@@ -1,6 +1,15 @@
 # service.irblaster
 Kodi service addon to support low-latency raw IR blasting to arbitrary devices
 
+> [!IMPORTANT]
+> **This project is no longer maintained.** It was experimental, proof-of-concept
+> code. It has been replaced by [fire-blaster](https://github.com/jpsutton/fire-blaster),
+> a standalone daemon that does the same job without Kodi. fire-blaster reads remotes
+> through evdev instead of eventlircd, so no `noop` keymaps are needed. It finds the
+> IR transmitter by itself, and keeps IR codes in profile files instead of in the
+> source. It also covers this README's original setup: an MCE remote whose volume
+> and input keys blast a Denon AVR.
+
 ## Background
 I have a media center setup that looks roughly like the following:
 
@@ -89,13 +98,12 @@ to prevent Kodi from acting on the inputs that you want mapped to service.irblas
 
 ## Project Status
 
-This project should be considered only to be at a proof-of-concept stage.
+This project was only ever a proof of concept, and it is no longer maintained. Use
+[fire-blaster](https://github.com/jpsutton/fire-blaster) instead. The notes below
+describe the code as it was left.
 
 As of now, I have the solution working for my own system, handling volume up/down, and
 changing of inputs on the AVR. There is some hard-coded data in the current project (
 such as the actual data blasted to the Denon AVR), so the code as it is won't be as
 useful to other people. However, the bones of this solution is what's important to other
 people: low-latency IR blasting from within Kodi.
-
-I will entertain pull requests which adds support for generically configuring key codes
-and blasted data.
